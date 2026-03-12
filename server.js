@@ -1,7 +1,6 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const ExcelJS = require('exceljs');
 
 const app = express();
@@ -14,7 +13,13 @@ const DEFAULT_TO = process.env.DEFAULT_TO || 'robotsmetalwit@gmail.com';
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
+
+// Logowanie requestów
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
 
 // Jeden transporter dla całej aplikacji
 const transporter = nodemailer.createTransport({
@@ -138,6 +143,12 @@ app.post('/send-report', async (req, res) => {
     console.error('Błąd wysyłki raportu:', error);
     res.status(500).json({ error: 'Błąd wysyłki' });
   }
+});
+
+// Globalna obsługa błędów
+app.use((err, req, res, next) => {
+  console.error('Nieobsłużony błąd:', err);
+  res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
 });
 
 // Start serwera
